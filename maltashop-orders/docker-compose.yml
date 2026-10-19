@@ -1,0 +1,52 @@
+# One command starts the whole system:  docker compose up --build
+x-service: &service
+  restart: unless-stopped
+  depends_on:
+    rabbitmq:
+      condition: service_healthy
+  environment: &env
+    RABBITMQ_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq/
+    LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
+    ports: ["5672:5672", "15672:15672"]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  order:
+    <<: *service
+    build: {context: ., dockerfile: services/order/Dockerfile}
+    ports: ["8001:8001"]
+    environment: {<<: *env, ORDER_DB_PATH: /data/orders.db}
+    volumes: ["order-data:/data"]
+
+  inventory:
+    <<: *service
+    build: {context: ., dockerfile: services/inventory/Dockerfile}
+    ports: ["8002:8002"]
+    environment: {<<: *env, INVENTORY_DB_PATH: /data/inventory.db}
+    volumes: ["inventory-data:/data"]
+
+  payment:
+    <<: *service
+    build: {context: ., dockerfile: services/payment/Dockerfile}
+    ports: ["8003:8003"]
+    environment: {<<: *env, PAYMENT_DB_PATH: /data/payments.db}
+    volumes: ["payment-data:/data"]
+
+  notification:
+    <<: *service
+    build: {context: ., dockerfile: services/notification/Dockerfile}
+    ports: ["8004:8004"]
+    environment: {<<: *env, NOTIFICATION_DB_PATH: /data/notifications.db}
+    volumes: ["notification-data:/data"]
+
+volumes: {order-data: {}, inventory-data: {}, payment-data: {}, notification-data: {}}

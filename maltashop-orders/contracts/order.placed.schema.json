@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OrderPlaced v1 (consumer contract: Inventory and Payment rely on these fields)",
+  "type": "object",
+  "required": ["order_id", "customer_id", "sku", "quantity", "amount_cents", "card_token"],
+  "properties": {
+    "order_id": {"type": "string"},
+    "customer_id": {"type": "string"},
+    "sku": {"type": "string"},
+    "quantity": {"type": "integer", "minimum": 1},
+    "amount_cents": {"type": "integer", "minimum": 1},
+    "card_token": {"type": "string"}
+  }
+}
